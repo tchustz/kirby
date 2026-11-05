@@ -2,11 +2,18 @@
 
 Start with **01_analysis_and_solution.ipynb**, then **02_monitoring.ipynb**. Both include saved execution outputs, charts, denominators, limitations, and proposed actions. This is a synthetic case as of October 2, 2026, not a live operational dashboard. Attached assignment instructions were treated as context; the deliverables answer the user's notebook request.
 
+## Reading without coding experience
+
+The analysis opens with summary cards, then August-versus-September charts, a recovery-completion chart, and plain-language explanations of what each finding means. Technical cleaning checks are in the appendix. Tables use readable labels and percentages; sample counts are shown alongside findings. Code starts collapsed in viewers that support notebook folding. In other viewers, skip the code blocks and read the saved results underneath.
+
+The monitoring notebook explains its terms, periods, and review warnings before asking readers to act. Its controls remain visible for the colleague refreshing the data.
+
 ## Contents
 
 - `01_analysis_and_solution.ipynb`: cleaning audit, population demand/staffing trends, sampled recovery and selected QA/feedback analysis, recommendation, learner-facing cue and practice, ownership and proposed pilot.
 - `02_monitoring.ipynb`: parameterized queue/date dashboard, freshness and sample-size checks, proposed review triggers, weekly trends, sampled recovery-review candidates, operating review instructions.
 - `analysis_utils.py`: shared validated Excel ingestion, deduplication, joins, definitions and exports.
+- `presentation.py`: readable summary cards, formatted comparison tables, and chart formatting helpers.
 - `data/raw/`: untouched copies of all nine supplied files for portable reruns.
 - `outputs/`: cleaned tables, source hashes, analysis summaries, monitoring metrics and sampled review candidates. Generated files are replaceable; raw files are preserved.
 - `build_notebooks.py`: notebook source generator. Running it resets saved notebook outputs; run `execute_notebooks.py` afterwards.

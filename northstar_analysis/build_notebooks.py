@@ -284,3 +284,281 @@ print('These are sample diagnostics, not population performance ratings.')
 
 **Refresh contract:** preserve source copies and hashes; rerun cleaning/joins and inspect audit changes. The analysis notebook retains the supplied historical cutoff. Monitoring passes its explicit `AS_OF` parameter to the loader, so refreshed calls, reviews, and responses must not extend beyond that date. Update `AS_OF` and document the new extract contract when adding genuinely later data; future-date checks remain active. No thresholds or processes here have been implemented at Northstar.
 """)])
+
+# Reader-facing presentation is kept here so regeneration preserves the accessible layout.
+import textwrap
+
+def md(text): return n.v4.new_markdown_cell(textwrap.dedent(text).strip())
+def code(text): return n.v4.new_code_cell(textwrap.dedent(text).strip())
+
+p=R/'01_analysis_and_solution.ipynb'
+b=n.read(p,as_version=4)
+b.cells[0]=md('''
+# Why are callers waiting longer — and what should Care do?
+## The main finding: more calls, longer conversations, and unfinished recovery
+**Northstar Home · fictional case · read as of October 2, 2026.** Records cover April–September 2026.
+
+September brought more calls and more time spent on each answered call. A recurring Wi-Fi issue is an important part of the picture. For customers whose hub qualified for help, the approved response required **two actions: a replacement hub and a free year of Plus**. Many sampled General Care calls did not complete both.
+
+**Recommended next step:** give Guides a short, practical recovery guide and practice with realistic cases. Make the right help article easier to find, and make sure unfinished account credits receive follow-up. Test this approach with small groups before a wider launch.
+
+### How to read this notebook
+Read the summary cards, charts, and “What this means” notes first. You do not need to understand Python. Results are already displayed; code can remain collapsed. “Guide” means customer-care representative. “Recovery” means the approved help for an eligible Wi-Fi hub.
+
+1. **What changed?** August compared with September.
+2. **Where does recovery break down?** A closer look at sampled calls.
+3. **What should change?** A practical recommendation and small test.
+4. **How trustworthy are the figures?** Sources and data checks in the appendix.
+
+**Reading the evidence:** daily operating figures include all recorded calls in each queue. Individual-call analysis covers a smaller sample. Quality reviews and customer feedback were selected unevenly. These sources help identify patterns; they do not prove what caused the changes.
+''')
+b.cells[1].source += '\nfrom presentation import table, cards, comparison, PercentFormatter, StrMethodFormatter'
+# Move technical data-cleaning details out of the opening story.
+audit=b.cells[2:5]
+b.cells=b.cells[:2]+[code('''
+ops['Month'] = ops.Date.dt.to_period('M').astype(str)
+monthly = ops.groupby(['Queue','Month']).apply(population_metrics, include_groups=False)
+a, b = monthly.loc[('General Care','2026-08')], monthly.loc[('General Care','2026-09')]
+post = calls[calls.Queue.eq('General Care') & calls['Recovery available'] & calls['Eligible for recovery'].eq('Yes')]
+complete = int(post['Complete recovery'].sum())
+cards([
+ ('Calls arriving each day', f"{a.offered_per_day:,.0f} → {b.offered_per_day:,.0f}", 'General Care: August → September'),
+ ('Time handling an answered call', f"{a.AHT_min:.1f} → {b.AHT_min:.1f} minutes", 'Includes talking, hold time, and after-call notes'),
+ ('Callers hanging up before help', f"{a.abandonment:.1%} → {b.abandonment:.1%}", 'Of all calls arriving in General Care'),
+ ('Both recovery steps completed', f"{complete} of {len(post)} sampled calls", 'Eligible General Care calls, September 21–30 only')])
+'''),md('''
+### The decision these findings support
+Treat this as a recovery-workflow and capacity problem. Coaching should help Guides move from listening to the right action, while Operations fixes search and transaction obstacles.
+
+**Important limit:** 76 of 204 describes the eligible calls in this sample. It does not mean that only 37% of all customers received help. We also cannot tell whether a later contact completed an unfinished recovery.
+''')]+b.cells[5:]
+for cell in b.cells:
+ if cell.cell_type=='code':
+  s=cell.source
+  if 'display(monthly.round(3))' in s:
+   cell.source='''ops['Month'] = ops.Date.dt.to_period('M').astype(str)
+monthly = ops.groupby(['Queue','Month']).apply(population_metrics, include_groups=False)
+monthly.to_csv(OUT/'monthly_population_metrics.csv')
+gc = monthly.loc['General Care']
+a, b = gc.loc['2026-08'], gc.loc['2026-09']
+table(comparison(a,b).rename(columns={'Earlier period':'August 2026','Later period':'September 2026'}),
+      '1. General Care was under more pressure in September',
+      'All recorded daily operations. A percentage point is the difference between two percentages: 4% to 28% is a rise of 24 points.')'''
+  elif "g = ops[ops.Queue.eq('General Care')]" in s:
+   cell.source='''g = ops[ops.Queue.eq('General Care')].sort_values('Date')
+fig, axes = plt.subplots(2,2,figsize=(13,8))
+metrics = [('offered_per_day','More calls arrived each day','Calls per day',False),
+ ('AHT_min','Each answered call took longer','Minutes per call',False),
+ ('abandonment','More callers left before reaching help','Share of arriving calls',True),
+ ('WN7_contact_share','Wi-Fi hub contacts became more common','Share of answered calls',True)]
+for ax,(key,title,unit,percent) in zip(axes.flat,metrics):
+ values=[a[key],b[key]]
+ ax.bar(['August','September'],values,color=['#94a3b8','#246b8e'],width=.55)
+ ax.set_title(title,loc='left',fontweight='bold');ax.set_ylabel(unit);ax.set_ylim(0,max(values)*1.28)
+ for i,v in enumerate(values):
+  ax.text(i,v+max(values)*.04,f'{v:.1%}' if percent else f'{v:,.1f}' if key=='AHT_min' else f'{v:,.0f}',ha='center',fontweight='bold')
+ if percent: ax.yaxis.set_major_formatter(PercentFormatter(1))
+ else: ax.yaxis.set_major_formatter(StrMethodFormatter('{x:,.0f}'))
+fig.suptitle('August vs September • all General Care operating records',fontsize=15)
+fig.tight_layout();plt.show()'''
+  elif '# Descriptive product segments' in s:
+   cell.source='''calls['Month'] = calls['Call date'].dt.to_period('M').astype(str)
+segments = calls.groupby(['Queue','Month','Product segment'])['AHT minutes'].agg(n='size',mean='mean',median='median')
+segment_view=segments.loc[('General Care',['2026-08','2026-09']),:].reset_index()
+segment_view['Month']=segment_view['Month'].map({'2026-08':'August','2026-09':'September'})
+segment_view['Average minutes']=segment_view['mean'].map('{:.1f}'.format)
+table(segment_view[['Month','Product segment','n','Average minutes']].rename(columns={'Product segment':'Product group','n':'Calls in sample'}),
+ 'A closer look: call length by product group',
+ 'Sampled General Care calls only. Unknown means the product code was missing. WN7-containing includes the WNM-7 bundle; a product tag does not establish eligibility.')
+components = ops.groupby(['Queue','Month']).apply(
+ lambda x: pd.Series({k:np.average(x[k],weights=x['Answered contacts']) for k in
+ ['Average talk minutes','Average hold minutes','Average wrap minutes']}),include_groups=False)
+comp=components.loc[('General Care',['2026-08','2026-09']),:].reset_index().drop(columns='Queue')
+comp.columns=['Month','Talking (minutes)','On hold (minutes)','After-call notes (minutes)']
+comp['Month']=comp.Month.map({'2026-08':'August','2026-09':'September'})
+for col in comp.columns[1:]:comp[col]=comp[col].map('{:.1f}'.format)
+table(comp,'Where did handling time go?', 'All General Care answered calls; averages reflect the number of calls handled each day.')'''
+  elif 'phase = calls.groupby' in s:
+   cell.source='''phase = calls.groupby(['Queue','Phase']).apply(recovery_metrics,include_groups=False)
+available = calls[calls['Recovery available']].copy()
+recovery = available.groupby('Queue').apply(recovery_metrics,include_groups=False)
+recovery.to_csv(OUT/'available_period_recovery.csv')
+e = available[available['Eligible for recovery'].eq('Yes')]
+path = e.groupby(['Queue','Conversation path'])['AHT minutes'].agg(n='size',mean='mean',median='median')
+gc_eligible=e[e.Queue.eq('General Care')]
+counts=[len(gc_eligible),int(gc_eligible['Serial verified'].eq('Yes').sum()),
+        int(gc_eligible['Replacement arranged'].eq('Yes').sum()),int(gc_eligible['Complete recovery'].sum())]
+fig,ax=plt.subplots(figsize=(11,4))
+labels=['Eligible sampled calls','Serial check recorded','Replacement arranged','Replacement AND Plus completed']
+ax.barh(labels[::-1],counts[::-1],color=['#157f65','#246b8e','#246b8e','#94a3b8'])
+for i,v in enumerate(counts[::-1]):ax.text(v+3,i,f'{v} of {counts[0]} ({v/counts[0]:.0%})',va='center')
+ax.set_xlim(0,counts[0]*1.45);ax.set_xlabel('Number of calls in the sample')
+ax.set_title('2. Recovery was often left unfinished',loc='left',fontweight='bold')
+fig.text(.02,.01,'General Care • eligible sampled calls, September 21–30. These are recorded actions, not timed steps.',fontsize=10)
+fig.tight_layout(rect=[0,.05,1,1]);plt.show()
+subset=path.loc['General Care'].reset_index()
+fig,ax=plt.subplots(figsize=(11,4))
+ax.barh(subset['Conversation path'],subset['mean'],color=['#157f65' if s=='Complete recovery' else '#64748b' for s in subset['Conversation path']])
+for i,row in subset.iterrows():ax.text(row['mean']+.3,i,f"{row['mean']:.1f} min • {int(row['n'])} calls",va='center')
+ax.set_xlim(0,subset['mean'].max()*1.4);ax.set_xlabel('Average handling time (minutes)')
+ax.set_title('Completed recovery was associated with shorter calls',loc='left',fontweight='bold')
+fig.text(.02,.01,'Same queue and period. This comparison does not prove that the recovery approach caused shorter calls.',fontsize=10)
+fig.tight_layout(rect=[0,.05,1,1]);plt.show()'''
+  elif "q = D['qa_joined']" in s:
+   cell.source='''q = D['qa_joined']; f = D['feedback_joined']
+qpost=q[q['Recovery available'] & q['Eligible for recovery'].eq('Yes')]
+fpost=f[f['Recovery available'] & f['Eligible for recovery'].eq('Yes')]
+feedback_view=fpost[fpost.Queue.eq('General Care')].groupby('Conversation path').agg(
+ responses=('Feedback ID','size'),average=('Satisfaction score','mean')).reset_index()
+feedback_view['Average rating (out of 5)']=feedback_view.average.map('{:.1f}'.format)
+table(feedback_view[['Conversation path','responses','Average rating (out of 5)']].rename(
+ columns={'Conversation path':'What happened on the call','responses':'People who responded'}),
+ 'What customers who responded told us',
+ 'Eligible General Care calls after September 21. Responses are voluntary and unevenly selected; these ratings do not represent every customer.')
+qa_view=qpost.groupby('Queue').agg(reviewed=('QA review ID','size'),recap=('Recap complete',lambda x:x.eq('Yes').sum())).reset_index()
+qa_view['Clear recap recorded']=qa_view.apply(lambda row:f"{row.recap} of {row.reviewed} reviewed calls",axis=1)
+table(qa_view[['Queue','Clear recap recorded']],'Did reviewed calls explain what happens next?',
+ 'Selected quality reviews after each queue gained the recovery path. Different selection and dates mean the queues are not a fair head-to-head comparison.')'''
+ else:
+  cell.source=cell.source.replace('## 2. Queue pressure is a volume and handling problem','### What this means: more demand and longer calls are straining the queue').replace('## 3. Availability is not adoption or successful recovery','## 2. Why having an article was not enough').replace('## 4. Proposed solution: an actionable recovery cue plus a bounded test','## 3. What to put in Guides’ hands next week').replace('## 5. Ownership, capacity, and decision rules — proposals, not completed actions','## 4. A small test before a wider rollout — proposed, not yet implemented')
+  cell.source=cell.source.replace('**Immediate learning response:**','**The practical learning response:**').replace('**Limits and next data needed:**','### What we still cannot tell from these files\n')
+# Appendix keeps the underlying cleaning explanation without putting it ahead of findings.
+audit[0].source=audit[0].source.replace('## 1. Data contract and cleaning','## Appendix: what the data includes and how it was checked')
+audit[1].source='''table(D['audit'].rename(columns={'table':'Source table','raw_rows':'Rows received','header_excel_row':'Header row in Excel','missing_key':'Rows missing an identifier','clean_rows':'Rows kept','removed_rows':'Duplicate rows removed'}), 'Data checks: what was kept and removed')
+missing = calls[['Product code','Reason code']].isna().sum()
+table(pd.DataFrame({'Missing information':['Product code','Reason code'],'Calls affected':missing.values,
+ 'Share of sampled calls':[f'{v/len(calls):.1%}' for v in missing.values]}),'What information was missing?',
+ 'Missing values were left blank; they were not guessed.')
+table(D['catalog_unmatched'].rename(columns={'Product code':'Code absent from catalog','sample_calls':'Calls retained in sample'}),
+ 'Product codes needing a catalog update', 'These calls remain in the analysis. No product descriptions were invented.')
+export_clean(D)'''
+b.cells.extend(audit)
+# Split lengthy recommendation material into navigable sections, preserving the full content.
+expanded=[]
+for cell in b.cells:
+ if cell.cell_type=='markdown' and '\n## ' in cell.source:
+  parts=cell.source.split('\n## ')
+  expanded.append(md(parts[0]));expanded.extend(md('## '+part) for part in parts[1:])
+ else: expanded.append(cell)
+b.cells=expanded
+for cell in b.cells:
+ if cell.cell_type=='code':cell.metadata.update({'jupyter':{'source_hidden':True},'collapsed':True})
+n.write(b,p)
+
+# Give the monitoring notebook the same plain-language labels and reading guidance.
+p=R/'02_monitoring.ipynb';b=n.read(p,as_version=4)
+b.cells[0]=md('''
+# Are customers getting the full recovery — without a longer wait?
+## A weekly check-in for Care leaders
+**Historical demonstration, not a live feed.** The supplied operating records end September 30, 2026.
+
+Use this notebook to answer three questions:
+1. **Is the queue getting harder to manage?** Check call volume, time handling calls, and callers leaving before help.
+2. **Are eligible customers receiving both parts of recovery?** Check replacement **and** Plus together.
+3. **What needs attention?** Review warnings, then ask Quality or Workforce Management to investigate.
+
+The results are already displayed. You do not need to edit code to read them. A colleague refreshing the report can change the queue, dates, and review settings in the next cell, then Run All. The default compares the latest seven available days with August. Thresholds are proposed discussion points, not agreed service targets.
+
+**Quick glossary:** “eligible” means the serial result qualifies the hub for the approved offer; “complete recovery” means replacement and Plus are both recorded complete; “sample” means only some calls were examined. A warning means investigate, not that a particular Guide is at fault.
+''')
+for cell in b.cells:
+ if cell.cell_type=='code':
+  s=cell.source
+  if 'from analysis_utils import *' in s:
+   s=s.replace('from analysis_utils import *','from analysis_utils import *\nfrom presentation import table, cards, comparison, PercentFormatter')
+   s=s.replace("display(D['audit'])", "display(Markdown('### 1. Report coverage and freshness\\nThe dates above describe the data available, not today’s live queue. No record of the proposed training rollout has been supplied.'))")
+  if 'display(scorecard.round(3))' in s:
+   s=s.replace('display(scorecard.round(3))',"table(comparison(baseline,now).rename(columns={'Earlier period':'Baseline period','Later period':'Latest available period'}), '2. Has queue pressure changed?', 'Baseline and current dates are shown above. Percentage points describe the gap between percentages.')")
+   s=s.replace("display(r.to_frame('sampled calls — eligible denominator').round(3))", "cards([('Eligible calls examined',f'{int(r.eligible_n)}','This is a call sample, not total customer demand'),('Both recovery steps completed',f'{int(r.complete_n)} of {int(r.eligible_n)}',f'{r.complete_rate:.0%}' if r.eligible_n else 'No eligible calls in this window'),('Recovery not recorded complete',f'{int(r.incomplete_n)}','Confirm the latest case status before acting')])")
+   s=s.replace('display(alert_table)',"table(alert_table.rename(columns={'check':'What to check','status':'Review status','evidence':'Why this status appears'}), '3. What needs attention?', 'REVIEW = investigate. INSUFFICIENT = too few eligible sampled calls to judge. OK / Within trigger does not prove the approach is working.')")
+  if "['Answered-weighted AHT (min)'" in s:
+   s=s.replace("['Answered-weighted AHT (min)','Abandoned / offered','WN7-containing / answered','Actual / planned Guide-days']", "['Average handling time (minutes)','Callers leaving before help (%)','Answered calls tagged WN7 / WNM-7 (%)','Staff present vs planned (%)']")
+   s=s.replace("axis.plot(weekly.index,weekly[col],marker='o',color='#246b8e');axis.set_title(title)","axis.plot(weekly.index,weekly[col],marker='o',color='#246b8e');axis.set_title(title)\n if col != 'AHT_min': axis.yaxis.set_major_formatter(PercentFormatter(1))")
+  s=s.replace('display(wr.round(3))',"table(pd.DataFrame({'Week starting':wr.index.strftime('%b %d'), 'Eligible calls examined':wr.eligible_n.astype(int), 'Both steps completed':wr.complete_n.astype(int), 'Completion rate':wr.complete_rate.map(lambda v:f'{v:.0%}' if pd.notna(v) else 'No eligible calls')}), '4. Is recovery improving over time?', 'Only sampled eligible calls after this queue gained the recovery path. Short edge weeks and small samples need caution.')")
+  s=s.replace("ax.set_ylim(0,1.1);ax.legend()", "ax.set_ylim(0,1.1);ax.yaxis.set_major_formatter(PercentFormatter(1));ax.legend()")
+  s=s.replace("display(candidates[fields].head(20))", "table(candidates[fields].head(20).rename(columns={'Call ID':'Call reference','Call date':'Date','Serial verified':'Serial check recorded','Conversation path':'Call approach','Northstar Plus attached':'Plus recorded complete'}), 'Calls to review with Quality', 'Up to 20 sampled calls shown. These are not a list of all open household cases; later resolution is unknown.')")
+  s=s.replace("display(q['Selection reason'].value_counts().to_frame('review_n'))", "table(q['Selection reason'].value_counts().rename_axis('Why calls were selected').reset_index(name='Reviews'), '5. How were the quality reviews selected?', 'These are selected reviews, not a representative survey of all calls.')")
+  s=s.replace("'yes_n':q[col].eq('Yes').sum()", "'Calls with behavior recorded':q[col].eq('Yes').sum()")
+  s=s.replace("'applicable_n':q[col].isin(['Yes','No']).sum()", "'Calls assessed':q[col].isin(['Yes','No']).sum()")
+  s=s.replace("mean_score=('Satisfaction score','mean')).round(2)", "mean_score=('Satisfaction score','mean')).round(1).rename(columns={'responses':'People who responded','mean_score':'Average rating out of 5'})")
+  cell.source=s
+  cell.metadata.update({'jupyter':{'source_hidden':True},'collapsed':True})
+  if '# User controls.' in s:cell.metadata.update({'jupyter':{'source_hidden':False},'collapsed':False})
+ else:
+  cell.source=cell.source.replace('## Operating review and future instrumentation','## 6. Who should act on these results?').replace('**Unavailable metrics must stay unavailable:**','### Questions this report cannot answer yet\n').replace('**Refresh contract:**','### For the colleague refreshing the data\n')
+n.write(b,p)
+
+# Final plain-language pass: keep methodological details in the appendix.
+p=R/'01_analysis_and_solution.ipynb';b=n.read(p,as_version=4)
+for cell in b.cells:
+ if cell.cell_type=='markdown':
+  s=cell.source
+  if s.startswith('### What this means:'):
+   cell.source='''### What this means: callers face pressure at both ends
+More people called in September, and each answered call took longer. About **28 in every 100 arriving callers hung up before reaching help**, compared with about **4 in every 100** in August.
+
+Calls tagged with the WN7 hub or its WNM-7 bundle also became more common. At the same time, the share of planned staff actually present fell slightly, from about 94% to 92%.
+
+**What to do with this finding:** address call handling and coverage together. The records do not tell us how much of the overall rise in call time was caused by the Wi-Fi issue. A product tag is not proof of a defective or eligible hub.'''
+  elif s.startswith('## 2. Why having an article'):
+   cell.source='''## 2. Why having an article was not enough
+The approved offer became available to different teams at different times:
+
+| Date | What became possible |
+|---|---|
+| August 31 | Product confirmed the Wi-Fi issue. |
+| September 10 | The replacement plus free-year offer was approved. |
+| September 12 | Specialist Care began a small trial. |
+| September 21 | General Care gained access to the help article. |
+
+The article went into a weekly update, but there was no separate incident alert or scheduled briefing across shifts. We do not know who read it. Meeting notes also describe Guides finding an older restart article or being unsure what to do when a Plus credit stayed pending.
+
+**What this means:** putting guidance online is a start. Guides also need to find it, recognize when to use it, and finish both recovery actions. The next chart looks only at eligible General Care calls **after** its article became available; earlier calls are not judged against a process they could not yet use.'''
+  elif s.startswith('In General Care after September 21'):
+   cell.source='''### What the recovery charts tell us
+Of **204 eligible General Care calls examined from September 21–30**:
+
+- **76 completed both actions**: a replacement and Plus.
+- **13 arranged a replacement but did not record Plus as attached.**
+- **115 followed generic troubleshooting** rather than completing the approved offer.
+
+The records also show a serial check on 159 of those 204 calls. The horizontal bars show recorded actions, not the exact order or timing of steps.
+
+**Complete recovery was associated with shorter calls:** about **10.9 minutes across 76 calls**, compared with **19.8 minutes across 115 generic-troubleshooting calls**. This suggests a useful approach to test, but does not prove it makes calls shorter. Easier cases, different Guides, or other factors could explain part of the difference.
+
+Specialist Care completed both steps on 163 of 193 eligible sampled calls after its September 12 start. Those customers and dates differ, so that figure is useful background rather than a fair ranking of the teams.
+
+**What to do with this finding:** coach complete recovery, not speed alone. The data cannot show whether an unfinished call was resolved later.'''
+  elif s.startswith('Selected feedback is consistent'):
+   cell.source='''### Customers who responded described a better experience after complete recovery
+Among eligible General Care respondents, those with both recovery steps complete rated the experience **4.5 out of 5 on average (47 responses)**. Those who went through generic troubleshooting averaged **1.5 out of 5 (61 responses)**.
+
+**Treat this as a clue, not a company-wide satisfaction score.** Customers chose whether to respond, and the feedback collection placed extra attention on WN7. Quality reviewers also deliberately selected higher-risk and longer calls. Their findings help identify what to coach; they do not tell us how often every Guide makes a mistake.'''
+  else:
+   s=s.replace('**Test plan:** proposed two-week staggered test; collect a one-week pre-period where the General article is already available and compare contemporaneous eligible calls within General Care. If randomization is impractical, report descriptive changes with strata for shift, tenure, mix, and staffing. Log simultaneous article/search/routing changes; do not isolate a training effect from a bundled test.',
+   '### How to test the recommendation fairly\nRun the proposed test for two weeks with small groups at different times. First collect a week of results while the article is already available. Compare with similar General Care teams handling calls during the test. If practical, assign the groups by chance. Otherwise explain differences in shifts, Guide experience, call types, and staffing. Record any search or system changes happening at the same time: improved results would not tell us which change helped most.')
+   s=s.replace('**Proposed gates requiring owner agreement:** 100% safe branch selection in practice before unsupervised use; no unsupported offer in reviewed ineligible calls; eligible sample completion improves ≥15 percentage points over comparable baseline with denominator ≥30 per group; no >2-point abandonment or >0.5-minute wait deterioration in matched operating windows. These are operational starting proposals, not statistically validated thresholds. Small/biased samples yield an inconclusive result, not success. Review transaction failures separately from Guide behavior.',
+   '### What would justify a wider rollout?\nThese starting rules need agreement from the owners; they are not proven targets.\n\n- Guides choose the safe next step in every practice case, including cases that do not qualify.\n- Reviewed ineligible calls contain no unsupported offer.\n- Completion of both steps improves by at least **15 percentage points** compared with a similar starting period. For example, 40% to 55% is a 15-point increase. Examine at least **30 eligible calls in each group**; even then, consider how calls were selected before drawing a conclusion.\n- In comparable operating windows, the share hanging up before help does not worsen by more than **2 percentage points**, and estimated wait does not worsen by more than **half a minute**.\n\nIf too few calls were reviewed, the answer is “we do not know yet.” Separate system failures from missed Guide actions.')
+   s=s.replace('no household/account IDs to measure repeat contacts, no order/credit event ledger to verify final fulfillment or backlog age, no exposure/roster/tenure file, no reliable wait numerator or interval-level staffing. Request those internally before claiming repeat-contact reduction, causal impact, closed recovery backlog, or sustainable capacity. Sample incomplete calls exported by monitoring are review candidates, not a deduplicated household backlog.',
+   'We cannot identify repeat calls from the same household, check whether an order shipped or a credit was later applied, or see which Guides took part in training. Daily totals also hide busy periods within a shift. Those extra records are needed before claiming fewer repeat calls, a successful rollout, or enough ongoing capacity. The monitoring call list is a starting point for review, not a count of all households still waiting.')
+   cell.source=s
+ elif cell.cell_type=='code' and 'export_clean(D)' in cell.source:
+  cell.source=cell.source.replace('export_clean(D)', "export_clean({**D, 'calls':calls.drop(columns='Month',errors='ignore')})")
+n.write(b,p)
+
+p=R/'02_monitoring.ipynb';b=n.read(p,as_version=4)
+for cell in b.cells:
+ if cell.cell_type=='markdown' and cell.source.startswith('**How to read the scorecard:**'):
+  cell.source='''### How to read the numbers above
+**Call time** includes talking, time on hold, and after-call notes. Busier days contribute more to the overall average. **Callers leaving before help** means the number who hung up divided by all arriving calls. **Staff present vs planned** compares the number of Guides available with the schedule.
+
+The wait figure is an **estimate**: the file gives daily average waits but does not explain exactly which callers are included. We combine those daily figures using the number of arriving calls.
+
+The queue figures cover all recorded calls. The recovery cards cover only **eligible calls in the sample**. August is useful background, but it is not a fair test of training effectiveness because the situation changed in September.
+
+**What to do next:** review any warning with the relevant owner. Too few calls means there is not enough evidence. A result within a trigger does not prove success, and daily totals cannot predict what happens when a small group leaves the phones for practice.'''
+ if cell.cell_type=='code':
+  cell.source=cell.source.replace("display(pd.DataFrame([{'behavior':col,", "table(pd.DataFrame([{'Behavior checked':col,")
+  cell.source=cell.source.replace("['Acknowledged practical impact','Recognized recovery path','Recap complete']]))", "['Acknowledged practical impact','Recognized recovery path','Recap complete']]), 'What reviewers heard', 'Each behavior has its own count of assessed calls; unassessed calls are not treated as failures.')")
+  cell.source=cell.source.replace("display(f.groupby('Conversation path').agg(responses=('Feedback ID','size'),mean_score=('Satisfaction score','mean')).round(1).rename(columns={'responses':'People who responded','mean_score':'Average rating out of 5'}))", "table(f.groupby('Conversation path').agg(responses=('Feedback ID','size'),mean_score=('Satisfaction score','mean')).round(1).reset_index().rename(columns={'Conversation path':'What happened on the call','responses':'People who responded','mean_score':'Average rating out of 5'}), 'What responding customers reported', 'Voluntary responses only; small groups can be misleading.')")
+n.write(b,p)

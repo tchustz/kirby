@@ -1,5 +1,5 @@
 Validation completed for the delivered historical snapshot:
-- Analysis notebook: 7 code cells executed, 2 rendered charts, no cell errors.
+- Analysis notebook: 8 code cells executed, 3 rendered charts, no cell errors.
 - Monitoring notebook: 6 code cells executed, 2 rendered charts, no cell errors.
 - Notebook schemas validated with nbformat.
 - 20,028 export rows reduced to 20,000 unique calls; 28 consistent labeled duplicates removed.
@@ -9,3 +9,5 @@ Validation completed for the delivered historical snapshot:
 - Original workbook bytes match the uploaded sources.
 - Monitoring edge scenario verified: Specialist Care, one-day window, November 5 as-of with September data correctly flags stale data and insufficient eligible sample.
 - These checks validate computation and monitoring controls, not intervention effectiveness.
+
+Presentation revision: notebook schemas and all saved execution outputs revalidated. Reviewed the comparison and recovery charts visually. Source data, calculations, and exported CSV values remain unchanged.
