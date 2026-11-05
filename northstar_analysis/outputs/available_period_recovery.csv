@@ -1,0 +1,3 @@
+Queue,eligible_n,serial_n,replacement_n,plus_n,complete_n,complete_rate,incomplete_n
+General Care,204.0,159.0,89.0,76.0,76.0,0.37254901960784315,128.0
+Specialist Care,193.0,193.0,193.0,163.0,163.0,0.844559585492228,30.0

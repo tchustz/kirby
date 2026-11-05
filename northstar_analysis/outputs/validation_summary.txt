@@ -1,0 +1,11 @@
+Validation completed for the delivered historical snapshot:
+- Analysis notebook: 7 code cells executed, 2 rendered charts, no cell errors.
+- Monitoring notebook: 6 code cells executed, 2 rendered charts, no cell errors.
+- Notebook schemas validated with nbformat.
+- 20,028 export rows reduced to 20,000 unique calls; 28 consistent labeled duplicates removed.
+- 1,600 QA and 2,200 feedback records joined without unmatched Call IDs or row multiplication.
+- General Care post-availability eligible sample: 76 complete recoveries / 204 eligible calls.
+- 18 non-WN7 catalog omissions (1,229 sampled calls) retained and flagged.
+- Original workbook bytes match the uploaded sources.
+- Monitoring edge scenario verified: Specialist Care, one-day window, November 5 as-of with September data correctly flags stale data and insufficient eligible sample.
+- These checks validate computation and monitoring controls, not intervention effectiveness.

@@ -1,0 +1,6 @@
+check,status,evidence
+Freshness,OK,2 days since latest operations
+Complete date window,OK,7/7 queue-days
+Abandonment,REVIEW,25.84 pp versus baseline
+Wait proxy,REVIEW,3.08 min versus baseline
+Recovery sample,REVIEW,52/145 completed both; sampled calls only
