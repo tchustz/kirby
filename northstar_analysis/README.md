@@ -40,3 +40,11 @@ Population AHT is answered-contact weighted; abandonment is abandoned/offered. O
 Unexpectedly, 18 observed non-WN7 product codes are absent from the supplied catalog; they are retained and flagged. Rounded durations differ from summed components by at most 0.1 minute. QA/feedback selection and queue differences preclude causal claims. Repeat contacts, population eligible demand, transaction backlog and actual pilot exposure cannot be measured from these files.
 
 Pilot sizes, schedules, thresholds, learner wording and ownership requests are proposals for review, not implemented business changes. Nothing is sent to Dana or other people.
+
+## Refreshing the monitoring feed with new records
+
+Open notebook 02 and follow **Before you refresh**. Its visible **EDIT HERE — refresh settings** cell controls `INPUT_FOLDER`, `AS_OF`, queue, window length, baseline, and review thresholds. Supply both complete, coordinated workbooks with their existing filenames and sheets; include enough history for your chosen baseline. New files replace the imported snapshot rather than append to it.
+
+Clear all outputs, then restart the kernel and run all cells in **notebook 02 only**. Check every source date, warnings and sample counts, and the final **Refresh complete** message. Save the notebook to retain the results. This is a manual refresh, not a continuously connected dashboard. The load timestamp and `outputs/monitor_refresh_receipt.json` identify the run settings and input hashes; the receipt alone does not certify that the whole notebook finished.
+
+For later exports, keep notebook 01 as the historical case analysis. `execute_notebooks.py` runs both notebooks and is intended to validate the original historical snapshot; use notebook 02 interactively for later monitoring data. Detailed instructions in notebook 02 identify where to adjust filenames, field names, and business rules if the export format changes. Archive prior inputs and outputs before replacement if you need a history of published reports.

@@ -1,6 +1,6 @@
 Validation completed for the delivered historical snapshot:
 - Analysis notebook: 8 code cells executed, 3 rendered charts, no cell errors.
-- Monitoring notebook: 6 code cells executed, 2 rendered charts, no cell errors.
+- Monitoring notebook: 7 code cells executed, 2 rendered charts, no cell errors.
 - Notebook schemas validated with nbformat.
 - 20,028 export rows reduced to 20,000 unique calls; 28 consistent labeled duplicates removed.
 - 1,600 QA and 2,200 feedback records joined without unmatched Call IDs or row multiplication.
@@ -11,3 +11,5 @@ Validation completed for the delivered historical snapshot:
 - These checks validate computation and monitoring controls, not intervention effectiveness.
 
 Presentation revision: notebook schemas and all saved execution outputs revalidated. Reviewed the comparison and recovery charts visually. Source data, calculations, and exported CSV values remain unchanged.
+
+Manual-feed revision: tested a separate temporary input folder with workbooks shifted 14 days later solely as a synthetic refresh test. The monitoring window became October 8–14 for an October 16 report, with two-day source age and eligible-call results. The refresh receipt was generated. Original source workbooks were not changed.

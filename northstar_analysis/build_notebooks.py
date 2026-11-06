@@ -562,3 +562,120 @@ The queue figures cover all recorded calls. The recovery cards cover only **elig
   cell.source=cell.source.replace("['Acknowledged practical impact','Recognized recovery path','Recap complete']]))", "['Acknowledged practical impact','Recognized recovery path','Recap complete']]), 'What reviewers heard', 'Each behavior has its own count of assessed calls; unassessed calls are not treated as failures.')")
   cell.source=cell.source.replace("display(f.groupby('Conversation path').agg(responses=('Feedback ID','size'),mean_score=('Satisfaction score','mean')).round(1).rename(columns={'responses':'People who responded','mean_score':'Average rating out of 5'}))", "table(f.groupby('Conversation path').agg(responses=('Feedback ID','size'),mean_score=('Satisfaction score','mean')).round(1).reset_index().rename(columns={'Conversation path':'What happened on the call','responses':'People who responded','mean_score':'Average rating out of 5'}), 'What responding customers reported', 'Voluntary responses only; small groups can be misleading.')")
 n.write(b,p)
+
+# Manual-feed instructions and editable source location for ongoing monitoring.
+p=R/'02_monitoring.ipynb';b=n.read(p,as_version=4)
+b.cells[0].source=b.cells[0].source.replace('**Historical demonstration, not a live feed.** The supplied operating records end September 30, 2026.',
+ '**A manually refreshed monitoring feed.** This notebook updates when you supply new exports and run it; it does not refresh continuously. The saved example still uses operating records through September 30, 2026.')
+refresh_guide=md('''
+## Before you refresh: update the files, change the settings, then Run All
+You can use this notebook for ongoing progress reviews. No connection to Orbit or another live system has been configured. Each run takes a fresh look at the Excel files you provide.
+
+### Step 1 — Get a complete, consistent set of exports
+Save the previous exports outside the active input folder so you can recover them. Put the new files in **`northstar_analysis/data/raw/`**, or use a separate folder and enter its path in **EDIT HERE — refresh settings** below.
+
+| File to supply | Sheets that must remain available | What it updates |
+|---|---|---|
+| `Orbit_operations.xlsx` | `Daily operations`, `Call sample`, `Staffing`, `Product catalog` | Call volume, handling time, waiting, staffing, and sampled recovery actions |
+| `Quality_and_feedback.xlsx` | `QA reviews`, `Customer feedback` | Selected quality checks and voluntary customer ratings |
+
+**Replace each workbook with a full updated export, not just the newest rows.** Keep enough history for your baseline and weekly charts. The notebook does not append files or remember previous imports. Preserve sheet names, column names, identifiers, and Yes/No values. It finds the header row automatically. Both sources should come from a coordinated extract; newer QA or feedback IDs must match calls in the call sample. Keep QA and feedback sheets even if no new reviews or responses arrived.
+
+Use complete daily records rather than partially completed days: the charts compare daily totals. A more recent daily export paired with an old call sample does **not** provide fresh recovery results. Check each source date shown after loading.
+
+### Step 2 — Edit only the settings cell below for a routine refresh
+The cell is labeled **EDIT HERE — refresh settings** and stays visible. Keep quotation marks around paths and dates. Dates use **year-month-day**, such as `'2026-10-16'`.
+
+| Setting in the code | What you change | Example or guidance |
+|---|---|---|
+| `INPUT_FOLDER` | Folder containing both workbooks | `'data/raw'` is relative to this notebook’s folder; an absolute folder path also works. |
+| `AS_OF` | Date through which this report may use events | For an October 16 review, set `'2026-10-16'`. Do not automatically move it just to make old data look fresh. Events after this date stop the run. |
+| `QUEUE` | Team to review | `'General Care'` or `'Specialist Care'`. |
+| `WINDOW_DAYS` | Number of recent calendar days to compare | `7` for a week or `14` for two weeks. The window ends on the latest available operating date, not automatically on `AS_OF`. |
+| `BASELINE_START`, `BASELINE_END` | Earlier operating period for comparison | Keep a fixed agreed baseline when tracking progress. Moving it every run changes the question you are answering. Both dates must be included in the exports. |
+| `MIN_ELIGIBLE_SAMPLE` | Minimum eligible sampled calls before judging recovery | Default `30` is a proposed review rule, not a guarantee of reliable evidence. |
+| `MAX_STALENESS_DAYS` | How old operating records can be before a warning appears | Default `3`; source dates and sample counts still need inspection. |
+| `ABANDONMENT_DELTA_PP`, `WAIT_DELTA_MIN` | How much worsening prompts a review | `2.0` means two percentage points; `0.5` means half a minute. Change only with the owners’ agreement. |
+| `COMPLETION_REVIEW_FLOOR` | Proposed recovery completion threshold | `0.80` means 80%. This is a review trigger, not an established service target. |
+
+**Example:** keep the filenames above, change `INPUT_FOLDER` to your new export folder, set `AS_OF = '2026-10-16'`, and leave `WINDOW_DAYS = 7`. With operating records through October 14, the window will be October 8–14. If your files end in September, changing `AS_OF` alone will only show that they are older.
+
+### Step 3 — Restart, run, check, and save
+1. Choose **Clear All Outputs** to remove old results, then **Kernel → Restart Kernel and Run All Cells** (some editors call this **Restart & Run All**). This clears old variables and reruns every calculation. Wait for all cells to finish.
+2. Check **Report coverage and freshness**: confirm the run time, source folder, latest operating date, dates of the call sample/reviews/feedback, and comparison periods.
+3. Check warnings and eligible-call counts before interpreting progress. A newer report run is not the same as newer source data. Look for consistent direction across several weeks, not just one small sample.
+4. Save the notebook to retain the refreshed charts. Generated monitoring CSVs in `outputs/` are overwritten each run; archive them first if you need snapshots. `monitor_refresh_receipt.json` records when the data was loaded, settings, and workbook hashes so you can identify the inputs used. It does not certify that a failed run finished successfully.
+
+**If a cell fails, do not share the partly refreshed dashboard.** Fix the issue and restart/run all again; old outputs further down may still be visible. Confirm that the last cell says **“Refresh complete”** with the same run time shown at the top. Notebook 01 is the fixed historical analysis; refresh **this monitoring notebook** for later records.
+''')
+b.cells.insert(1,refresh_guide)
+for cell in b.cells:
+ if cell.cell_type!='code':continue
+ s=cell.source
+ if '# User controls.' in s:
+  s=s.replace('# User controls. Queue must match the workbook labels.',
+ '# EDIT HERE — refresh settings\n# Change this folder and date when new exports arrive; then Restart & Run All.\nINPUT_FOLDER = "data/raw"  # Contains both workbooks; relative to this notebook folder.\n# Queue must match the workbook labels.')
+ if 'D = load_data(as_of=AS_OF, call_through=AS_OF)' in s:
+  s=s.replace('D = load_data(as_of=AS_OF, call_through=AS_OF)',
+ '''# READ NEW FILES HERE. Normally, change INPUT_FOLDER in the settings cell instead.
+INPUT_PATH = Path(INPUT_FOLDER).expanduser()
+if not INPUT_PATH.is_absolute(): INPUT_PATH = ROOT / INPUT_PATH
+if not INPUT_PATH.is_dir(): raise ValueError(f'Input folder not found: {INPUT_PATH}')
+RUN_AT = pd.Timestamp.now(tz='UTC')
+D = load_data(raw=INPUT_PATH, as_of=AS_OF, call_through=AS_OF)''')
+  s += '''
+# Show separate source dates so old samples cannot look fresh beside new daily totals.
+coverage_rows=[]
+for name,label,date_col in [('daily','Daily operations','Date'),('staff','Staffing','Date'),
+ ('calls','Sampled calls','Call date'),('qa','Quality reviews (review date)','Review date'),
+ ('feedback','Customer feedback (response date)','Response date')]:
+ frame=D[name]
+ frame=frame[frame.Queue.eq(QUEUE)]
+ dates=frame[date_col].dropna()
+ coverage_rows.append({'Source':label,'Records available':len(frame),
+  'Latest event date':dates.max().strftime('%Y-%m-%d') if len(dates) else 'No records',
+  'Age at report date':f'{(AS_OF-dates.max()).days} days' if len(dates) else 'Not available'})
+display(Markdown(f'**Data loaded at:** {RUN_AT.strftime("%Y-%m-%d %H:%M UTC")}  \\n**Input folder:** `{INPUT_PATH}`  \\nThis is the last manual load time; it is not a live connection.'))
+table(pd.DataFrame(coverage_rows),'Check the dates of every source',
+ 'Review and response dates may lag call dates. A recent daily total does not make an old call sample current. Empty-window or low-sample recovery results cannot show current progress.')
+import hashlib, json
+OUT.mkdir(exist_ok=True)
+receipt={'loaded_at_utc':RUN_AT.isoformat(),'as_of':AS_OF.date().isoformat(),
+ 'input_folder':str(INPUT_PATH),'queue':QUEUE,'window_start':start.date().isoformat(),
+ 'window_end':end.date().isoformat(),'baseline_start':BASELINE_START,'baseline_end':BASELINE_END,
+ 'source_coverage':coverage_rows,
+ 'review_settings':{'window_days':WINDOW_DAYS,'minimum_eligible_calls':MIN_ELIGIBLE_SAMPLE,
+ 'max_staleness_days':MAX_STALENESS_DAYS,'abandonment_delta_pp':ABANDONMENT_DELTA_PP,
+ 'wait_delta_minutes':WAIT_DELTA_MIN,'completion_review_floor':COMPLETION_REVIEW_FLOOR},
+ 'workbook_sha256':{name:hashlib.sha256((INPUT_PATH/name).read_bytes()).hexdigest() for name in
+ ['Orbit_operations.xlsx','Quality_and_feedback.xlsx']}}
+(OUT/'monitor_refresh_receipt.json').write_text(json.dumps(receipt,indent=2))
+'''
+ cell.source=s
+b.cells.append(md('''
+## When the export format or recovery process changes
+Routine refreshes need edits only in **EDIT HERE — refresh settings**. Ask the colleague maintaining the notebook to make the following changes when the source itself changes:
+
+| Change | Exact place to update | Check afterwards |
+|---|---|---|
+| Different workbook names or sheet names | `analysis_utils.py`, `load_data()`, the `specs` mapping; also the workbook list in the **READ NEW FILES HERE** cell and this guide | Every required table loads and the receipt hashes the right files. |
+| Renamed columns or different status values | `analysis_utils.py`, `load_data()` cleaning and validation; code cells using those fields | Keep unique identifiers, duplicate checks, staffing joins, and the rule requiring both recovery actions. Do not just suppress an error. |
+| Different queues, changed offer, or a newly approved path | `analysis_utils.py`, `load_data()`, the `Recovery available` and `Complete recovery` definitions; `recovery_metrics()` | Confirm the new business rules and effective dates with Care/Product, then review labels and comparisons. Existing rules are specific to this case. |
+| Different operating comparison or review triggers | **EDIT HERE — refresh settings**, near the top of this notebook | Record why the baseline or triggers changed so progress remains interpretable. |
+| Connecting an API or database in future | Replace the Excel-reading part of `load_data()` with an authorized connector that returns the same validated tables | Credentials belong in secure configuration, never in notebook cells. No such connection exists in this version. |
+
+If workbook headings or fields are missing, restore the agreed format or update the loader with a developer. If joins fail, get matching calls, staffing, and review exports. If a baseline is empty, supply its history or deliberately choose an available baseline. If data is dated after `AS_OF`, correct the report date or supply the appropriate snapshot. Do not bypass checks to obtain a chart.
+
+**Tracking progress after a rollout:** keep a record of actual rollout dates, shifts/Guides included, search/system changes, and staffing changes. The weekly chart shows change over time, but without those extra records it cannot tell whether training caused a change. The supplied sources do not yet contain rollout participation or household-level repeat-call data.
+'''))
+b.cells.append(code('''
+# A successful refresh reaches this final cell without earlier errors.
+display(Markdown(f'### Refresh complete\\nAll monitoring cells finished for **{QUEUE}**. '
+                 f'Data loaded at **{RUN_AT.strftime("%Y-%m-%d %H:%M UTC")}**; '
+                 f'operating window **{start.date()}–{end.date()}**. '
+                 'Save this notebook to retain these results.'))
+'''))
+for cell in b.cells:
+ if cell.cell_type=='code':
+  cell.metadata.update({'jupyter':{'source_hidden':'# EDIT HERE' not in cell.source},'collapsed':'# EDIT HERE' not in cell.source})
+n.write(b,p)
