@@ -1,0 +1,39 @@
+{
+  "completed_at_utc": "20261106T215129069639Z",
+  "report_date": "2026-10-02",
+  "mode": "historical_demo",
+  "settings": {
+    "input_folder": "/workspace/kirby/northstar_analysis/data/raw",
+    "output_folder": "/workspace/kirby/northstar_analysis/outputs/learning",
+    "issue_log": "/workspace/kirby/northstar_analysis/data/learning/issue_log.csv",
+    "as_of": "2026-10-02",
+    "mode": "historical_demo",
+    "baseline_start": "2026-08-01",
+    "baseline_end": "2026-08-31",
+    "window_days": 7,
+    "consecutive_weeks": 2,
+    "max_source_age_days": 3,
+    "min_sample_per_week": 20,
+    "min_baseline_sample": 40,
+    "min_qa_per_week": 10,
+    "min_feedback_per_week": 10,
+    "aht_increase_fraction": 0.15,
+    "volume_increase_fraction": 0.15,
+    "abandonment_increase_pp": 5.0,
+    "segment_share_increase_pp": 5.0,
+    "qa_gap_fraction": 0.35,
+    "low_feedback_fraction": 0.35,
+    "generic_troubleshooting_fraction": 0.25,
+    "guide_view_approved": false,
+    "min_guide_calls": 100,
+    "min_guide_reviews": 20,
+    "min_guide_weeks": 4,
+    "product_grouping": "code"
+  },
+  "source_sha256": {
+    "Orbit_operations.xlsx": "9357258956b78b104132eb3bb6aaedbcef585ee9ef42e2beab2ef5135a2f6621",
+    "Quality_and_feedback.xlsx": "d9fb91bcad8116740825f696cae9a83865bd35c4ab68d447a4f6e38e1012be86"
+  },
+  "output_directory": "/workspace/kirby/northstar_analysis/outputs/learning/20261106T215129069639Z",
+  "flags": 15
+}

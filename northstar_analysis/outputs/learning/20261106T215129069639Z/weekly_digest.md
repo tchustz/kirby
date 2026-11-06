@@ -1,0 +1,27 @@
+# Weekly learning insight digest — 2026-10-02
+
+Mode: **historical_demo**. Historical runs are retrospective examples, not evidence of early detection.
+
+15 sustained investigation flags; 2 complete weeks required. Baseline: 2026-08-01 to 2026-08-31.
+
+## What to investigate first
+- **P1 · General Care · Arriving calls increase** (All / All; Full daily population). Check coverage and contact mix with Workforce; ask Product and Quality for issue evidence. Evidence: Week ending 2026-09-20: +24.6% from baseline (192,758 arriving calls); Week ending 2026-09-27: +31.4% from baseline (203,199 arriving calls).
+- **P1 · General Care · Callers leaving before help increase** (All / All; Full daily population). Check coverage and contact mix with Workforce; ask Product and Quality for issue evidence. Evidence: Week ending 2026-09-20: +25.8 percentage points from baseline (192,758 arriving calls); Week ending 2026-09-27: +25.8 percentage points from baseline (203,199 arriving calls).
+- **P1 · General Care · Queue handling time increase** (All / All; Full daily population). Check coverage and contact mix with Workforce; ask Product and Quality for issue evidence. Evidence: Week ending 2026-09-20: +30.2% from baseline (134,931 answered calls); Week ending 2026-09-27: +33.7% from baseline (142,239 answered calls).
+- **P1 · Specialist Care · Arriving calls increase** (All / All; Full daily population). Check coverage and contact mix with Workforce; ask Product and Quality for issue evidence. Evidence: Week ending 2026-09-20: +37.5% from baseline (12,582 arriving calls); Week ending 2026-09-27: +50.5% from baseline (13,776 arriving calls).
+- **P1 · Specialist Care · Callers leaving before help increase** (All / All; Full daily population). Check coverage and contact mix with Workforce; ask Product and Quality for issue evidence. Evidence: Week ending 2026-09-20: +13.3 percentage points from baseline (12,582 arriving calls); Week ending 2026-09-27: +18.9 percentage points from baseline (13,776 arriving calls).
+- **P2 · General Care · Sample contact mix increase (percentage points)** (All / Connectivity; Sampled calls). Inspect product and reason tags; verify pattern with Product and Quality. Sample mix is not total demand. Evidence: Week ending 2026-09-20: +24.1 percentage points from baseline (287 of 645 sampled calls); Week ending 2026-09-27: +29.0 percentage points from baseline (342 of 693 sampled calls).
+- **P2 · General Care · Sample contact mix increase (percentage points)** (WN7 / All; Sampled calls). Inspect product and reason tags; verify pattern with Product and Quality. Sample mix is not total demand. Evidence: Week ending 2026-09-20: +19.9 percentage points from baseline (136 of 645 sampled calls); Week ending 2026-09-27: +25.5 percentage points from baseline (185 of 693 sampled calls).
+- **P2 · General Care · Sample contact mix increase (percentage points)** (WNM-7 / All; Sampled calls). Inspect product and reason tags; verify pattern with Product and Quality. Sample mix is not total demand. Evidence: Week ending 2026-09-20: +8.5 percentage points from baseline (57 of 645 sampled calls); Week ending 2026-09-27: +12.2 percentage points from baseline (87 of 693 sampled calls).
+- **P2 · General Care · Sample handling time increase** (All / All; Sampled calls). Review examples with Care Quality before choosing an intervention. Evidence: Week ending 2026-09-20: +30.0% from baseline (645 sampled calls; baseline 3216); Week ending 2026-09-27: +33.6% from baseline (693 sampled calls; baseline 3216).
+- **P2 · General Care · Sample handling time increase** (All / Connectivity; Sampled calls). Review examples with Care Quality before choosing an intervention. Evidence: Week ending 2026-09-20: +66.0% from baseline (287 sampled calls; baseline 655); Week ending 2026-09-27: +64.4% from baseline (342 sampled calls; baseline 655).
+- **P2 · General Care · Selected QA gap: Acknowledged practical impact** (All / All; Selected QA reviews). Calibrate reviewed examples; distinguish missing tools, unclear policy, system failures and practice needs. Evidence: Week ending 2026-09-20: 40.2% of assessed observations (92 assessed reviews); Week ending 2026-09-27: 36.4% of assessed observations (118 assessed reviews).
+- **P2 · General Care · Selected QA gap: Recap complete** (All / All; Selected QA reviews). Calibrate reviewed examples; distinguish missing tools, unclear policy, system failures and practice needs. Evidence: Week ending 2026-09-20: 51.1% of assessed observations (92 assessed reviews); Week ending 2026-09-27: 39.0% of assessed observations (118 assessed reviews).
+
+## Interpretation and next action
+Sampled calls are not total demand. QA and feedback are nonrandom. Signals can reflect case mix, tagging, staffing, search or tool problems; investigate with Product and Care Quality before assigning learning.
+Repeat contacts are unavailable: no stable household/account identifier or complete contact history was supplied. Guide views are off unless explicitly approved and sufficiently supported; minimum counts do not eliminate selection bias.
+Inspect all 3287 rule evaluations and source coverage in the exported CSVs. Priority is a proposed investigation order, not a performance score.
+
+## Human follow-up
+Update status, owner, notes and validated timing fields in `/workspace/kirby/northstar_analysis/data/learning/issue_log.csv`. Do not overwrite existing issue IDs or auto timestamps. A disappearing flag does not close an investigation.

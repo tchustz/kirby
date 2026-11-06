@@ -1,0 +1,7 @@
+table,raw_rows,header_excel_row,missing_key,clean_rows,removed_rows
+daily,366,5,0,366,0
+calls,20028,5,0,20000,28
+staff,366,5,0,366,0
+catalog,250,5,0,250,0
+qa,1600,5,0,1600,0
+feedback,2200,5,0,2200,0

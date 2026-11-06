@@ -1,0 +1,7 @@
+Learning early-warning pilot validation
+- Notebook 03: all 9 code cells executed successfully; two chart outputs saved; nbformat schema valid.
+- 10 unit checks passed: population/sample denominators; sustained changes; unavailable-path applicability; one-week suppression; missing-week suppression; stale-data suppression; small-sample suppression; deduplicated log with preserved human notes; validated pilot timing; Guide views off; invalid configuration prevents output. (Some checks exercise multiple safeguards.)
+- Separate later-dated test workbooks loaded from a new input folder: operating dates through October 14, evaluated complete weeks through October 11. Original sources unchanged.
+- Offline HTML rendered in headless Chromium with queue/product/reason filters, matching chart/table rows, empty-view text, and no JavaScript errors. Browser file-URL navigation is restricted in this environment, so HTML was rendered in memory for this check.
+- Default historical mode produces no pilot success claims. Repeat-contact measurement remains explicitly unavailable.
+- No scheduling, external data connection, messages, or automatic performance ratings were enabled.
